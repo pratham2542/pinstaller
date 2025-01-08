@@ -73,23 +73,9 @@ program=$(dialog --clear --title "Program Installer" \
 
 # Check if the user clicked cancel (exit code 1)
 if [ $? -ne 0 ]; then
+  clear
+  # reset  # Reset terminal after cancel
   echo "No program selected. Exiting..."
-  exit 0
-fi
-
-clear  # Clear the dialog screen
-
-# Display a menu for the package manager selection
-manager=$(dialog --clear --title "Select Package Manager" \
-  --menu "Choose a package manager for $program:" 15 50 5 \
-  1 "APT" \
-  2 "Snap" \
-  3 "Flatpak" \
-  2>&1 >/dev/tty)
-
-# Check if the user clicked cancel (exit code 1)
-if [ $? -ne 0 ]; then
-  echo "No package manager selected. Exiting..."
   exit 0
 fi
 
@@ -113,29 +99,48 @@ case $program in
     program="vscode"
     ;;
   *)
+    clear
+    # reset  # Reset terminal after invalid selection
     echo "No valid program selected."
     exit 1
     ;;
 esac
 
+# Generate package manager options dynamically based on available directories
+managers=()
+counter=1
+for dir in installers/$program/*; do
+  if [ -d "$dir" ]; then
+    manager_name=$(basename "$dir")
+    managers+=("$counter" "$manager_name")
+    ((counter++))
+  fi
+done
+
+# Display the package manager selection dynamically based on available managers
+manager=$(dialog --clear --title "Select Package Manager" \
+  --menu "Choose a package manager for $program:" 15 50 5 \
+  "${managers[@]}" \
+  2>&1 >/dev/tty)
+
+# Check if the user clicked cancel (exit code 1)
+if [ $? -ne 0 ]; then
+  clear
+  # reset  # Reset terminal after cancel
+  echo "No package manager selected. Exiting..."
+  exit 0
+fi
+
+clear  # Clear the dialog screen
+
 # Map manager selection to corresponding package manager
-case $manager in
-  1)
-    manager="apt"
-    ;;
-  2)
-    manager="snap"
-    ;;
-  3)
-    manager="flatpak"
-    ;;
-  *)
-    echo "No valid package manager selected."
-    exit 1
-    ;;
-esac
+manager_name=${managers[$manager*2-2+1]}
 
 # Run the installation script
-run_install_script "$program" "$manager"
+run_install_script "$program" "$manager_name"
+
+# Reset terminal at the end
+clear
+# reset
 
 exit 0
