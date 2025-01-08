@@ -139,8 +139,4 @@ manager_name=${managers[$manager*2-2+1]}
 # Run the installation script
 run_install_script "$program" "$manager_name"
 
-# Reset terminal at the end
-clear
-# reset
-
 exit 0
