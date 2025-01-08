@@ -4,3 +4,4 @@ Architecture: all
 Maintainer: Your Name <your.email@example.com>
 Depends: bash, dialog, apt, snapd, flatpak
 Description: A program to manage software installations for Linux.
+
