@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# postinst: This script runs after the package is installed
+
+# Install Flatpak and Snap if not already installed
+if ! command -v flatpak > /dev/null 2>&1; then
+  echo "Installing Flatpak..."
+  sudo apt update -y
+  sudo apt install -y flatpak
+fi
+
+if ! command -v snap > /dev/null 2>&1; then
+  echo "Installing Snap..."
+  sudo apt install -y snapd
+fi
+
+# Install Dialog if not already installed
+if ! command -v dialog > /dev/null 2>&1; then
+  echo "Installing Dialog..."
+  sudo apt install -y dialog
+fi
+
+# Make sure the installation directory is set up
+if [ ! -d "/usr/local/lib/pinstaller" ]; then
+  mkdir -p /usr/local/lib/pinstaller
+fi
+
+exit 0
