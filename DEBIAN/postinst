@@ -2,20 +2,20 @@
 
 # postinst: This script runs after the package is installed
 
-# Ensure Flatpak is installed
-if ! command -v flatpak > /dev/null 2>&1; then
-  echo "Flatpak is missing. Please install it manually using 'sudo apt install flatpak'."
-fi
+# # Ensure Flatpak is installed
+# if ! command -v flatpak > /dev/null 2>&1; then
+#   echo "Flatpak is missing. Please install it manually using 'sudo apt install flatpak'."
+# fi
 
-# Ensure Snap is installed
-if ! command -v snap > /dev/null 2>&1; then
-  echo "Snap is missing. Please install it manually using 'sudo apt install snapd'."
-fi
+# # Ensure Snap is installed
+# if ! command -v snap > /dev/null 2>&1; then
+#   echo "Snap is missing. Please install it manually using 'sudo apt install snapd'."
+# fi
 
-# Ensure Dialog is installed
-if ! command -v dialog > /dev/null 2>&1; then
-  echo "Dialog is missing. Please install it manually using 'sudo apt install dialog'."
-fi
+# # Ensure Dialog is installed
+# if ! command -v dialog > /dev/null 2>&1; then
+#   echo "Dialog is missing. Please install it manually using 'sudo apt install dialog'."
+# fi
 
 # Ensure the installation directory is set up
 if [ ! -d "/usr/local/lib/pinstaller" ]; then
