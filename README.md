@@ -6,7 +6,7 @@
   ```
 - To install this package
   ```bash
-    sudo spkg -i pinstaller.deb
+    sudo dpkg -i pinstaller.deb
   ```
 - to run the program
   ```bash

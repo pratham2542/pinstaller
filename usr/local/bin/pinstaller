@@ -1,22 +1,24 @@
 #!/bin/bash
 
-# pinstaller.sh: A script to manage software installations dynamically
+# pinstaller.sh: A script to manage software installations
 
-# Get the directory of the current script
-SCRIPT_DIR=$(dirname "$(realpath "$0")")
+# Define the directory for the installers
+INSTALLER_DIR="/tmp/pinstaller-installers"
 
-# Source configuration file
-CONFIG_FILE="$SCRIPT_DIR/config.sh"
-if [ -f "$CONFIG_FILE" ]; then
-  source "$CONFIG_FILE"
-else
-  echo "Configuration file not found! Exiting..."
+# Check if the script is run with sudo
+if [[ "$EUID" -ne 0 ]]; then
+  echo "Please run this script with sudo."
   exit 1
 fi
 
-# Directory to store downloaded installers
-INSTALLERS_DIR="/tmp/pinstaller_installers"
-mkdir -p "$INSTALLERS_DIR"
+# Clone the repository to fetch the latest installers
+if [ ! -d "$INSTALLER_DIR" ]; then
+  echo "Cloning the pinstaller-installers repository..."
+  git clone https://github.com/pratham2542/pinstaller-installer.git "$INSTALLER_DIR"
+else
+  echo "Updating the pinstaller-installers repository..."
+  git -C "$INSTALLER_DIR" pull
+fi
 
 # Ensure the 'dialog' utility is installed
 echo "Checking for 'dialog' utility..."
@@ -32,42 +34,21 @@ else
   echo "'dialog' is already installed."
 fi
 
-# Fetch the latest installers
-echo "Fetching the latest installation scripts..."
-if [ -d "$INSTALLERS_DIR/.git" ]; then
-  git -C "$INSTALLERS_DIR" pull
-else
-  git clone "$INSTALLER_REPO_URL" "$INSTALLERS_DIR"
-fi
-
-if [ $? -ne 0 ]; then
-  echo "Failed to fetch the installation scripts. Please check your internet connection or the repository URL."
-  exit 1
-fi
-
-# Function to run the program's installation script
-run_install_script() {
-  local program=$1
-  local manager=$2
-
-  # Check if the script exists for the selected program and package manager
-  if [ -f "$INSTALLERS_DIR/$program/$manager/install.sh" ]; then
-    # Run the installation script
-    bash "$INSTALLERS_DIR/$program/$manager/install.sh"
-  else
-    echo "Installation script for $program with $manager not found."
-    exit 1
+# Generate the list of available programs dynamically
+program_options=()
+counter=1
+for dir in "$INSTALLER_DIR"/*; do
+  if [ -d "$dir" ]; then
+    program_name=$(basename "$dir")
+    program_options+=("$counter" "$program_name")
+    ((counter++))
   fi
-}
+done
 
-# Display a menu with a list of programs
+# Display a dynamic menu with the list of programs
 program=$(dialog --clear --title "Program Installer" \
-  --menu "Select a program to install:" 15 50 5 \
-  1 "Firefox" \
-  2 "Docker" \
-  3 "GNOME Tweaks" \
-  4 "VLC Media Player" \
-  5 "Visual Studio Code" \
+  --menu "Select a program to install:" 15 50 ${#program_options[@]} \
+  "${program_options[@]}" \
   2>&1 >/dev/tty)
 
 # Check if the user clicked cancel (exit code 1)
@@ -79,34 +60,14 @@ fi
 
 clear  # Clear the dialog screen
 
-# Map program selection to corresponding program name
-case $program in
-  1)
-    program="firefox"
-    ;;
-  2)
-    program="docker"
-    ;;
-  3)
-    program="tweaks"
-    ;;
-  4)
-    program="vlc"
-    ;;
-  5)
-    program="vscode"
-    ;;
-  *)
-    clear
-    echo "No valid program selected."
-    exit 1
-    ;;
-esac
+# Map selection to program name
+selected_program_index=$((($program - 1) * 2 + 1))
+program_name=${program_options[$selected_program_index]}
 
 # Generate package manager options dynamically based on available directories
 managers=()
 counter=1
-for dir in "$INSTALLERS_DIR/$program"/*; do
+for dir in "$INSTALLER_DIR/$program_name/"*; do
   if [ -d "$dir" ]; then
     manager_name=$(basename "$dir")
     managers+=("$counter" "$manager_name")
@@ -114,9 +75,9 @@ for dir in "$INSTALLERS_DIR/$program"/*; do
   fi
 done
 
-# Display the package manager selection dynamically based on available managers
+# Display the package manager selection dynamically
 manager=$(dialog --clear --title "Select Package Manager" \
-  --menu "Choose a package manager for $program:" 15 50 5 \
+  --menu "Choose a package manager for $program_name:" 15 50 ${#managers[@]} \
   "${managers[@]}" \
   2>&1 >/dev/tty)
 
@@ -129,10 +90,16 @@ fi
 
 clear  # Clear the dialog screen
 
-# Map manager selection to corresponding package manager
-manager_name=${managers[$manager*2-2+1]}
+# Map selection to manager name
+selected_manager_index=$((($manager - 1) * 2 + 1))
+manager_name=${managers[$selected_manager_index]}
 
 # Run the installation script
-run_install_script "$program" "$manager_name"
+if [ -f "$INSTALLER_DIR/$program_name/$manager_name/install.sh" ]; then
+  bash "$INSTALLER_DIR/$program_name/$manager_name/install.sh"
+else
+  echo "Installation script for $program_name with $manager_name not found."
+  exit 1
+fi
 
 exit 0
