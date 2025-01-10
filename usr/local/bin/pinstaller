@@ -1,15 +1,22 @@
 #!/bin/bash
 
-# pinstaller.sh: A script to manage software installations
+# pinstaller.sh: A script to manage software installations dynamically
 
 # Get the directory of the current script
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
-# Check if the script is run with sudo
-if [[ "$EUID" -ne 0 ]]; then
-  echo "Please run this script with sudo."
+# Source configuration file
+CONFIG_FILE="$SCRIPT_DIR/config.sh"
+if [ -f "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
+else
+  echo "Configuration file not found! Exiting..."
   exit 1
 fi
+
+# Directory to store downloaded installers
+INSTALLERS_DIR="/tmp/pinstaller_installers"
+mkdir -p "$INSTALLERS_DIR"
 
 # Ensure the 'dialog' utility is installed
 echo "Checking for 'dialog' utility..."
@@ -25,15 +32,28 @@ else
   echo "'dialog' is already installed."
 fi
 
+# Fetch the latest installers
+echo "Fetching the latest installation scripts..."
+if [ -d "$INSTALLERS_DIR/.git" ]; then
+  git -C "$INSTALLERS_DIR" pull
+else
+  git clone "$INSTALLER_REPO_URL" "$INSTALLERS_DIR"
+fi
+
+if [ $? -ne 0 ]; then
+  echo "Failed to fetch the installation scripts. Please check your internet connection or the repository URL."
+  exit 1
+fi
+
 # Function to run the program's installation script
 run_install_script() {
   local program=$1
   local manager=$2
 
   # Check if the script exists for the selected program and package manager
-  if [ -f "$SCRIPT_DIR/../lib/installers/$program/$manager/install.sh" ]; then
+  if [ -f "$INSTALLERS_DIR/$program/$manager/install.sh" ]; then
     # Run the installation script
-    bash "$SCRIPT_DIR/../lib/installers/$program/$manager/install.sh"
+    bash "$INSTALLERS_DIR/$program/$manager/install.sh"
   else
     echo "Installation script for $program with $manager not found."
     exit 1
@@ -86,7 +106,7 @@ esac
 # Generate package manager options dynamically based on available directories
 managers=()
 counter=1
-for dir in $SCRIPT_DIR/../lib/installers/$program/*; do
+for dir in "$INSTALLERS_DIR/$program"/*; do
   if [ -d "$dir" ]; then
     manager_name=$(basename "$dir")
     managers+=("$counter" "$manager_name")

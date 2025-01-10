@@ -1,0 +1,1 @@
+INSTALLER_REPO_URL="https://github.com/pratham2542/pinstaller-installer.git"
