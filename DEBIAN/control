@@ -1,7 +1,7 @@
 Package: pinstaller
-Version: 1.0.0
+Version: 1.0.1
 Architecture: all
-Maintainer: Your Name <your.email@example.com>
-Depends: bash, apt, snapd, flatpak
+Maintainer: Pratham Mehta <p.mehta2542@gmail.com>
+Depends: bash, apt
 Description: A program to manage software installations for Linux.
 
